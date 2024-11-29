@@ -1,5 +1,5 @@
 import React from "react";
-import { styles } from "./register.module.css";
+import styles from "./register.module.css";
 import axios from "axios";
 
 const API_BASE_URL = "http://127.0.0.1:8000"
@@ -45,53 +45,65 @@ export default function Login() {
   }
 
   return (
-    <div>
-      <h1>Register</h1>
-      <form onSubmit={handleRegister}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-        />
-        <button type="submit">Register</button>
-      </form>
-      {message && <p>{message}</p>}
-    </div>);
+    <div className={styles.container}>
+    <h1>Register</h1>
+    <form className={styles.form} onSubmit={handleRegister}>
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Address"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Phone"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        className={styles.input}
+        required
+      />
+      <button
+        type="submit"
+        className={styles.button}
+      >
+        Register
+      </button>
+    </form>
+    {message && <p>{message}</p>}
+  </div>
+      );
 }

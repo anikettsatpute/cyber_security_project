@@ -11,3 +11,16 @@ class ChatResponse(BaseModel):
     intent: str
     entities: dict
     root_intent: str
+    terminate_context: bool = False  # Option to terminate
+
+class login_req(BaseModel):
+    user_id: str
+    password: str
+
+class register_req(BaseModel):
+    user_id: str
+    password: str
+    name: str
+    email: str
+    address: str
+    phone_number: str

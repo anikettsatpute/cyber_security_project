@@ -8,7 +8,7 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 import datetime
-from models import ChatRequest, ChatResponse
+from models import ChatRequest, ChatResponse, login_req, register_req
 from chatbot.chatbotInfra.chatbot import MultiTurnChatbot
 import os
 from pydantic import BaseModel
@@ -90,9 +90,6 @@ def verify_password(plain_password, hashed_password):
 def read_root():
     return {"Hello": "World"}
 
-class login_req(BaseModel):
-    user_id: str
-    password: str
 
 @app.post("/login")
 def login(request: login_req):
@@ -117,14 +114,6 @@ def login(request: login_req):
         conn.close()
         raise HTTPException(status_code=401, detail="User does not exist")
     
-
-class register_req(BaseModel):
-    user_id: str
-    password: str
-    name: str
-    email: str
-    address: str
-    phone_number: str
 
 @app.post("/register")
 def register(request: register_req):
@@ -166,13 +155,14 @@ def chat_with_bot(request: ChatRequest):
 
     # Handle the user's input
     try:
-        print("User input:", user_input, type(user_input))
+        # print("User input:", user_input, type(user_input))
         end_flag = chatbot.handle_turn(user_input)
         return ChatResponse(
             bot_response=chatbot.history["bot_response"],
             intent=chatbot.history["intent"],
             entities=chatbot.history["entities"],
             root_intent=chatbot.history["root_intent"],
+            terminate_context=end_flag
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

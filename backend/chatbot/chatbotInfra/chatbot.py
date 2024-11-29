@@ -340,40 +340,50 @@ class MultiTurnChatbot:
 
         
     def handle_turn(self, user_input):
-        if isinstance(user_input, dict):
-            self.history = user_input
-            user_input = user_input["query"]
-        
-        prev_intent = self.history["intent"] if self.history and "intent" in self.history else ""
-        prev_bot_response = self.history["bot_response"] if self.history and "bot_response" in self.history else ""
+        try:
+            if isinstance(user_input, dict):
+                print("User Input: ", user_input)
+                self.history = user_input
+                root_intent = user_input["root_intent"] if "root_intent" in user_input else None
+                user_input = user_input["query"]
+            
+            print("First User Input: ", user_input)
 
-        current_query = f"[INT] {prev_intent} [BOT] {prev_bot_response} [USR] {user_input}"
+            prev_intent = self.history["intent"] if self.history and "intent" in self.history else ""
+            prev_bot_response = self.history["bot_response"] if self.history and "bot_response" in self.history else ""
 
-        # Get the intent prediction
-        intent = self.get_intent(current_query)
-        if self.intent is None:
-            self.intent = intent
-        print(f"Predicted Intent: {intent}")
+            current_query = f"[INT] {prev_intent} [BOT] {prev_bot_response} [USR] {user_input}"
 
-        # Get the entities
-        prev_entities = self.history["entities"] if self.history else {}
-        entities = self.get_entities(current_query)
-        print(f"Predicted Entities: {entities}")
-        self.history["root_intent"] = self.intent
-        self.history["intent"] = intent
-        self.history["query"] = current_query
-        print(self.history)
-        for entity_label, entity_values in entities:
-            self.history["entities"][entity_label_to_entity[entity_label]] = handle_synonyms(entity_label_to_entity[entity_label]," ".join(entity_values).strip())
-        # get bot response
-        intent_rule = intent_rules[self.intent]
-        end_flag , bot_response = intent_rule.get_bot_response(self.history)
-        print(f"Bot Response: {bot_response}")
-        self.history["bot_response"] = bot_response
-        print(self.history)
-        if self.reset_flag:
-            self.reset_context()
-        return end_flag or self.reset_flag
+            # Get the intent prediction
+            intent = self.get_intent(current_query)
+            if root_intent is None:
+                root_intent = intent
+            print(f"Predicted Intent: {intent}")
+
+            # Get the entities
+            prev_entities = self.history["entities"] if self.history and "entities" in self.history else {}
+            entities = self.get_entities(current_query)
+            print(f"Predicted Entities: {entities}")
+            self.history["root_intent"] = root_intent
+            self.history["intent"] = intent
+            self.history["query"] = current_query
+            print("here", self.history)
+            for entity_label, entity_values in entities:
+                print(entity_label, entity_values)
+                self.history["entities"][entity_label_to_entity[entity_label]] = handle_synonyms(entity_label_to_entity[entity_label]," ".join(entity_values).strip())
+            # get bot response
+            print("here2")
+            intent_rule = intent_rules[root_intent]
+            end_flag , bot_response = intent_rule.get_bot_response(self.history)
+            print(f"Bot Response: {bot_response}")
+            self.history["bot_response"] = bot_response
+            print(self.history)
+            if self.reset_flag:
+                self.reset_context()
+            return end_flag
+        except Exception as e:
+            print(e)
+            return True
 
 
 chatbot = MultiTurnChatbot(ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities, True)

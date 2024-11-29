@@ -9,14 +9,17 @@ function App() {
   const [isLogged, setIsLogged] = React.useState(false);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login setIsLogged={setIsLogged} />} />
-        <Route path="/chatbot"
-          element={isLogged ? <Chat_bot /> : <Navigate to="/" />}
-        />
-      </Routes>
-    </Router>
+    // <Router>
+    //   <Routes>
+    //     <Route path="/" element={<Login setIsLogged={setIsLogged} />} />
+    //     <Route path="/chatbot"
+    //       element={isLogged ? <Chat_bot /> : <Navigate to="/" />}
+    //     />
+    //   </Routes>
+    // </Router>
+    <>
+    <Chat_bot />
+    </>
   );
 }
 

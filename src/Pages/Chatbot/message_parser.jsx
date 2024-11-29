@@ -1,8 +1,9 @@
 import React from 'react';
 
 const MessageParser = ({ children, actions }) => {
-  const parse = (message) => {
-    actions.handleInput(message);
+
+  const parse = async (message) => {
+    await actions.handleInput(message);
   };
 
   return (

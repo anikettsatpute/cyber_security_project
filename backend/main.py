@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,7 +14,9 @@ import os
 from pydantic import BaseModel
 from transformers import BertTokenizerFast, BertForTokenClassification
 from transformers import DistilBertForSequenceClassification
-
+from user_agents import parse
+from loggers import log_login_to_json
+from datetime import datetime as dt, timezone
 import json
 
 # Initialize FastAPI app
@@ -92,28 +94,50 @@ def read_root():
 
 
 @app.post("/login")
-def login(request: login_req):
-    print(request)
+async def login(request: Request, login_data: login_req):
+    # Extract metadata
+    ip_address = request.headers.get("X-Forwarded-For", request.client.host)
+    user_agent_string = request.headers.get("User-Agent", "")
+    user_agent = parse(user_agent_string)
+    device_type = "Mobile" if user_agent.is_mobile else "Tablet" if user_agent.is_tablet else "Desktop"
+
+    # Log the request details
+    print(f"IP Address: {ip_address}")
+    print(f"Device Type: {device_type}")
+    print(f"User-Agent: {user_agent_string}")
+    print(f"Timestamp: {dt.now(timezone.utc).isoformat()}")
+
+    # Database connection
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    
-    # check if user exists
-    c.execute("SELECT * FROM users WHERE user_id=?",(request.user_id,))
+
+    # Check if user exists
+    c.execute("SELECT * FROM users WHERE user_id=?", (login_data.user_id,))
     user = c.fetchone()
 
     if user:
-        if not verify_password(request.password, user[1]):
+        if not verify_password(login_data.password, user[1]):
             conn.close()
             raise HTTPException(status_code=401, detail="Invalid credentials")
         else:
-            access_token = create_access_token(data={"sub": request.user_id})
+            # access_token = create_access_token(data={"sub": login_data.user_id})
+            access_token = "dummy_token"
             conn.close()
-            return {"access_token": access_token, "token_type": "bearer"}
+
+            # Return the login details with metadata
+            log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string, "success")
+            return {
+                "access_token": access_token,
+                "timestamp": dt.now(timezone.utc).isoformat(),
+                "token_type": "bearer",
+                "ip_address": ip_address,
+                "device_type": device_type,
+                "user_agent": user_agent_string
+            }
 
     else:
         conn.close()
         raise HTTPException(status_code=401, detail="User does not exist")
-    
 
 @app.post("/register")
 def register(request: register_req):

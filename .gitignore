@@ -25,3 +25,25 @@ yarn-error.log*
 # data files
 data/*
 !data/README.md
+
+# venv
+chatbot_venv/
+backend/venv/
+
+# pycache
+*/__pycache__/
+backend/chatbot/__pycache__/
+backend/__pycache__/
+backend/chatbot/chatbotInfra/__pycache__/
+
+# models
+*/intent_model/
+*/ner_model/
+
+venv/
+
+intent_model.zip
+ner_model.zip
+
+backend/chatbot/intent_model/
+backend/chatbot/ner_model/

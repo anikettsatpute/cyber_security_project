@@ -160,7 +160,7 @@ def chat_with_bot(request: ChatRequest):
     if request.reset_context:
         chatbot.reset_context()  # Reset context if requested
 
-    user_input = request.user_input.strip()
+    user_input = request.user_input
     if not user_input:
         raise HTTPException(status_code=400, detail="User input cannot be empty.")
 
@@ -172,6 +172,7 @@ def chat_with_bot(request: ChatRequest):
             bot_response=chatbot.history["bot_response"],
             intent=chatbot.history["intent"],
             entities=chatbot.history["entities"],
+            root_intent=chatbot.history["root_intent"],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -228,7 +228,7 @@ intent_rules = {
 }
 
 class MultiTurnChatbot:
-    def __init__(self, ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities):
+    def __init__(self, ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities, reset_flag=False):
         self.ner_model = ner_model
         self.ner_tokenizer = ner_tokenizer
         self.intent_model = intent_model
@@ -244,6 +244,7 @@ class MultiTurnChatbot:
         self.ner_model.to(self.device)
         self.intent_model.to(self.device)
         self.data_collator =  DataCollatorWithPadding(self.intent_tokenizer, padding='max_length', max_length=128)
+        self.reset_flag = reset_flag
 
     def reset_context(self):
         self.history = {
@@ -339,6 +340,10 @@ class MultiTurnChatbot:
 
         
     def handle_turn(self, user_input):
+        if isinstance(user_input, dict):
+            self.history = user_input
+            user_input = user_input["query"]
+        
         prev_intent = self.history["intent"] if self.history and "intent" in self.history else ""
         prev_bot_response = self.history["bot_response"] if self.history and "bot_response" in self.history else ""
 
@@ -354,14 +359,10 @@ class MultiTurnChatbot:
         prev_entities = self.history["entities"] if self.history else {}
         entities = self.get_entities(current_query)
         print(f"Predicted Entities: {entities}")
-        # Add the entities to the history
-        for entity_label, entity_values in entities:
-            print(entity_label, entity_values)
-            self.history["entities"][entity_label] = entity_values
-
         self.history["root_intent"] = self.intent
         self.history["intent"] = intent
         self.history["query"] = current_query
+        print(self.history)
         for entity_label, entity_values in entities:
             self.history["entities"][entity_label_to_entity[entity_label]] = handle_synonyms(entity_label_to_entity[entity_label]," ".join(entity_values).strip())
         # get bot response
@@ -369,10 +370,13 @@ class MultiTurnChatbot:
         end_flag , bot_response = intent_rule.get_bot_response(self.history)
         print(f"Bot Response: {bot_response}")
         self.history["bot_response"] = bot_response
-        return end_flag
+        print(self.history)
+        if self.reset_flag:
+            self.reset_context()
+        return end_flag or self.reset_flag
 
 
-chatbot = MultiTurnChatbot(ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities)
+chatbot = MultiTurnChatbot(ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities, True)
 
 def main():
     while True:

@@ -8,14 +8,14 @@
     background-color: #f9f9f9; /* Light background color */
     font-family: Arial, sans-serif;
   }
-  
+
   /* Header styling */
   .container h1 {
     font-size: 2rem;
     color: #333;
     margin-bottom: 1rem;
   }
-  
+
   /* Form styling */
   .container form {
     width: 100%;
@@ -25,7 +25,7 @@
     border-radius: 8px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   }
-  
+
   /* Input fields styling */
   .container input {
     width: 94%;
@@ -36,13 +36,13 @@
     font-size: 1rem;
     transition: border-color 0.3s ease;
   }
-  
+
   .container input:focus {
     border-color: #007bff; /* Highlighted border on focus */
     outline: none;
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
   }
-  
+
   /* Button styling */
   .container button {
     width: 100%;
@@ -56,16 +56,16 @@
     cursor: pointer;
     transition: background-color 0.3s ease;
   }
-  
+
   .container button:disabled {
     background-color: #ccc; /* Disabled state */
     cursor: not-allowed;
   }
-  
+
   .container button:hover {
     background-color: #0056b3; /* Darker blue on hover */
   }
-  
+
   /* Message styling */
   .container p {
     margin-top: 10px;
@@ -73,18 +73,18 @@
     color: #ff0000; /* Red for error messages */
     text-align: center;
   }
-  
+
   /* Responsive adjustments */
   @media (max-width: 480px) {
     .container form {
       padding: 15px;
       max-width: 100%;
     }
-  
+
     .container input, button {
       font-size: 0.9rem;
     }
-  
+
     .container h1 {
       font-size: 1.5rem;
     }

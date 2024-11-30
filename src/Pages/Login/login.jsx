@@ -7,7 +7,7 @@ const API_BASE_URL = "http://127.0.0.1:8000"; // FastAPI backend URL
 
 export const loginUser = async (username, pass) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/login`, { 
+    const response = await axios.post(`${API_BASE_URL}/login`, {
       user_id: username,
       password: pass
     }, {
@@ -15,7 +15,7 @@ export const loginUser = async (username, pass) => {
         "Content-Type": "application/json",
     }});
     return response.data;
-    
+
   } catch (error) {
     throw error.response?.data?.detail || "Login failed";
   }

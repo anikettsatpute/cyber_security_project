@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Chatbot  from "react-chatbot-kit";
-import 'react-chatbot-kit/build/main.css'
+import Chatbot from "react-chatbot-kit";
+import "react-chatbot-kit/build/main.css";
 import "./chatbot.css";
 import config from "./config";
 import MessageParser from "./message_parser";
@@ -22,4 +22,3 @@ export default function Chat_bot() {
     </>
   );
 }
-

@@ -68,7 +68,7 @@ def init_db():
 def load_csv_to_db(csv_file, table_name):
     if not os.path.exists(csv_file):
         raise FileNotFoundError(f"CSV file '{csv_file}' not found")
-    
+
     # Read the CSV file into a DataFrame
     df = pd.read_csv(csv_file)
 

@@ -8,7 +8,7 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 import datetime
-from models import ChatRequest, ChatResponse, login_req, register_req
+from models import ChatRequest, ChatResponse, login_req, register_req, UserInput
 from chatbot.chatbotInfra.chatbot import MultiTurnChatbot
 import os
 from pydantic import BaseModel
@@ -42,6 +42,26 @@ ACCESS_TOKEN_EXPI = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 DATABASE = "ecommerce.db"
+KEYSTROKE_FILE_PATH = "./logs/keystroke.json"
+
+# Function to read keystroke data from the file
+def read_keystroke_data():
+    # Check if the file exists
+    if os.path.exists(KEYSTROKE_FILE_PATH):
+        with open(KEYSTROKE_FILE_PATH, "r") as f:
+            return json.load(f)
+    else:
+        # If the file doesn't exist, return an empty list
+        return []
+
+# Function to write keystroke data to the file
+def write_keystroke_data(data):
+    # Ensure the directory exists before creating the file
+    os.makedirs(os.path.dirname(KEYSTROKE_FILE_PATH), exist_ok=True)
+
+    # Write the keystroke data to the file
+    with open(KEYSTROKE_FILE_PATH, "w") as f:
+        json.dump(data, f, indent=4)
 
 # Load models and tokenizers
 ner_model_dir = './chatbot/ner_model'
@@ -144,9 +164,6 @@ async def get_login_anomalies(request: Request):
     # for each user_id keep their highest anomaly score
     anomalies_users = anomalies_users.groupby('user_id').agg({'anomaly_score_user_id': 'max'}).reset_index()
 
-    # print top 20 users based on their weighted_failures_user with unique user_id
-    # print(anomalies_users.sort_values(by='weighted_failures_user', ascending=False).head(20))
-
     # get top 20 users with highest anomaly score
     anomalies_users = anomalies_users.sort_values(by='anomaly_score_user_id', ascending=True).head(20)
 
@@ -166,6 +183,39 @@ async def get_login_anomalies(request: Request):
         "anomalies_users": anomalies_user.to_dict(orient='records'),
         "anomalies_ips": anomalies_ip.to_dict(orient='records')
     }
+
+
+@app.post("/keystroke")
+async def receive_keystroke_data(user_input: UserInput):
+    """
+    API endpoint to receive keystroke timing data and store it in a JSON file.
+    """
+    try:
+        # Validate and process the input
+        data = user_input.dict()
+        print(data)
+
+        # Log the data for debugging
+        print("Received keystroke data:", json.dumps(data, indent=4))
+
+        # Read the existing keystroke data from the JSON file
+        keystroke_data = read_keystroke_data()
+
+        # Append the new data to the keystroke data list
+        print(data['user_input']['avg_key_delay'])
+        # only append data for avg_key_delay greater than 0
+        if data['user_input']['avg_key_delay'] > 0:
+            # append user data for avg_key_delay
+            keystroke_data.append(data["user_input"])
+
+        # Write the updated keystroke data back to the file
+        write_keystroke_data(keystroke_data)
+
+        return {"status": "success", "message": "Keystroke data stored successfully."}
+
+    except Exception as e:
+        # Handle errors and send appropriate HTTP response
+        raise HTTPException(status_code=400, detail=f"Error processing data: {str(e)}")
 
 
 @app.post("/login")
@@ -221,7 +271,7 @@ async def login(request: Request, login_data: login_req):
 def register(request: register_req):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    
+
     # Check if user_id already exists
     c.execute("SELECT * FROM users WHERE user_id=?", (request.user_id,))
     user = c.fetchone()

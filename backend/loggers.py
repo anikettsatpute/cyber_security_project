@@ -30,7 +30,7 @@ def log_login_to_json(user_id, ip_address, device_type, user_agent, status):
                 logs = json.load(f)
         else:
             logs = []
-    
+
     except json.JSONDecodeError:  # Handle the case where the file is empty or corrupted
         logs = []
 

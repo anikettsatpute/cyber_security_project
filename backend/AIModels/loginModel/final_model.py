@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import IsolationForest
 import numpy as np
+import os
 
 
 log_file = './logs/login.json'
@@ -11,7 +12,7 @@ def preprocess(df):
     window_size = '5min'
     # Filter out rows older than 10 days
     df['timestamp'] = df['timestamp'].dt.tz_convert('UTC')
-    df = df[df['timestamp'] > pd.Timestamp.now(tz='UTC') - pd.DateOffset(hours=10)]
+    df = df[df['timestamp'] > pd.Timestamp.now(tz='UTC') - pd.DateOffset(hours=48)]
 
     # Set timestamp as index for time-based operations
     df.set_index('timestamp', inplace=True)
@@ -142,6 +143,7 @@ def get_features_list(type: str):
 def get_model():
 
     data = pd.read_json(log_file)
+    # print the absolute path of the log file
     df_user, df_ip = preprocess(data) 
 
     feature_columns_user = get_features_list("user_id")

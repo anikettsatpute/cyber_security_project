@@ -24,12 +24,12 @@ function App() {
     //     />
     //   </Routes>
     // </Router>
-    // <>
-    // <Chat_bot />
-    // </>
     <>
-      <Login />
+      <Chat_bot />
     </>
+    // <>
+    //   <Login />
+    // </>
   );
 }
 

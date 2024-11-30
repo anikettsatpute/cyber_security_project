@@ -176,7 +176,6 @@ async def get_login_anomalies(request: Request):
 
 
 @app.post("/login")
-def login(request: login_req):
 async def login(request: Request, login_data: login_req):
     # Extract metadata
     ip_address = request.headers.get("X-Forwarded-For", request.client.host)
@@ -194,6 +193,8 @@ async def login(request: Request, login_data: login_req):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
+    print("Login data:", login_data)
+
     # Check if user exists
     c.execute("SELECT * FROM users WHERE user_id=?", (login_data.user_id,))
     user = c.fetchone()
@@ -205,11 +206,8 @@ async def login(request: Request, login_data: login_req):
             log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string,-1)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         else:
-            access_token = create_access_token(request.user_id)
-            # access_token = create_access_token(data={"sub": login_data.user_id})
-            access_token = "dummy_token"
+            access_token = create_access_token(login_data.user_id)
             conn.close()
-
             response = Response()
 
             response.set_cookie(
@@ -220,19 +218,9 @@ async def login(request: Request, login_data: login_req):
                 samesite="None",    
                 max_age=ACCESS_TOKEN_EXPI * 60
             )
-
-            return response
-
             # Return the login details with metadata
             log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string, +1)
-            return {
-                "access_token": access_token,
-                "timestamp": dt.now(timezone.utc).isoformat(),
-                "token_type": "bearer",
-                "ip_address": ip_address,
-                "device_type": device_type,
-                "user_agent": user_agent_string
-            }
+            return response
 
     else:
         conn.close()

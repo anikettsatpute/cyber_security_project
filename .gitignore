@@ -48,3 +48,13 @@ ner_model.zip
 
 backend/chatbot/intent_model/
 backend/chatbot/ner_model/
+
+# ignore all csv files
+
+*.csv
+
+# ignore all json files
+*.json
+
+# do not ignore login.json
+!login.json

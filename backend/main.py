@@ -17,7 +17,11 @@ from transformers import DistilBertForSequenceClassification
 from user_agents import parse
 from loggers import log_login_to_json
 from datetime import datetime as dt, timezone
+from AIModels.loginModel.final_model import get_model as get_login_model, get_predictions as get_login_predictions
 import json
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+import matplotlib.pyplot as plt
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -64,6 +68,27 @@ with open(os.path.join(ner_model_dir, "entity_labels.json"), "r") as f:
 # Initialize the chatbot
 chatbot = MultiTurnChatbot(ner_model, ner_tokenizer, intent_model, intent_tokenizer, intents, entities)
 
+# initialize the login model
+login_model_user, login_model_ip = get_login_model()
+print("Login model loaded successfully")
+
+# Function to load or refresh the model
+def refresh_login_model():
+    try:
+        print("Refreshing login model...")
+        login_model_user, login_model_ip = get_login_model()  # This will call the function to load your model
+        print("Login model refreshed successfully")
+    except Exception as e:
+        print(f"Error refreshing login model: {str(e)}")
+
+# Create the scheduler
+scheduler = BackgroundScheduler()
+
+# Add the job to refresh the model every 10 minutes (600 seconds)
+scheduler.add_job(refresh_login_model, 'interval', minutes=10)
+
+# Start the scheduler
+scheduler.start()
 
 # JWT token
 def create_access_token(data: dict, expires_delta: datetime.timedelta = None):
@@ -92,6 +117,56 @@ def verify_password(plain_password, hashed_password):
 def read_root():
     return {"Hello": "World"}
 
+@app.get("/loginAnomalies")
+async def get_login_anomalies(request: Request):
+    """
+    Endpoint to get the login anomalies from the login model.
+    """
+    # Get the login anomalies from the model
+    data = pd.read_json('./logs/login.json')
+
+    # Create DataFrame
+    anomalies_users, anomalies_ips = get_login_predictions(login_model_user, login_model_ip, data)
+
+    # get anomaly_score of user with user_id 20101
+    print(anomalies_users[anomalies_users['user_id'] == 20101])
+
+    # process the anomalies with score greater than 0.3
+    anomalies_users = anomalies_users[anomalies_users['anomaly_score_user_id'] < 0]
+
+    # process the anomalies with score greater than 0.3
+    anomalies_ips = anomalies_ips[anomalies_ips['anomaly_score_ip_address'] < 0]
+
+    # filter for maximum 20 users with highest anomaly score
+    anomalies_users = anomalies_users.sort_values(by='anomaly_score_user_id', ascending=False)
+    print(anomalies_users.sort_values(by='weighted_failures_user', ascending=False).head(20)[['user_id', 'anomaly_score_user_id', 'weighted_failures_user']])
+
+    # for each user_id keep their highest anomaly score
+    anomalies_users = anomalies_users.groupby('user_id').agg({'anomaly_score_user_id': 'max'}).reset_index()
+
+    # print top 20 users based on their weighted_failures_user with unique user_id
+    # print(anomalies_users.sort_values(by='weighted_failures_user', ascending=False).head(20))
+
+    # get top 20 users with highest anomaly score
+    anomalies_users = anomalies_users.sort_values(by='anomaly_score_user_id', ascending=True).head(20)
+
+    # get top 20 ips with highest anomaly score
+    anomalies_ips = anomalies_ips.sort_values(by='anomaly_score_ip_address', ascending=True).head(20)
+
+    anomalies_user = anomalies_users[['user_id', 'anomaly_score_user_id']]
+    anomalies_ip = anomalies_ips[['ip_address', 'anomaly_score_ip_address']]
+    anomalies_user = anomalies_user.where(pd.notna(anomalies_user), None)
+    anomalies_ip = anomalies_ip.where(pd.notna(anomalies_ip), None)
+
+    # Further ensure no NaN values are left before returning data
+    anomalies_user = anomalies_user.fillna(method='ffill')
+    anomalies_ip = anomalies_ip.fillna(method='ffill')
+
+    return {
+        "anomalies_users": anomalies_user.to_dict(orient='records'),
+        "anomalies_ips": anomalies_ip.to_dict(orient='records')
+    }
+
 
 @app.post("/login")
 async def login(request: Request, login_data: login_req):
@@ -118,6 +193,8 @@ async def login(request: Request, login_data: login_req):
     if user:
         if not verify_password(login_data.password, user[1]):
             conn.close()
+            print("Status: Invalid credentials")
+            log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string,-1)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         else:
             # access_token = create_access_token(data={"sub": login_data.user_id})
@@ -125,7 +202,7 @@ async def login(request: Request, login_data: login_req):
             conn.close()
 
             # Return the login details with metadata
-            log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string, "success")
+            log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string, +1)
             return {
                 "access_token": access_token,
                 "timestamp": dt.now(timezone.utc).isoformat(),
@@ -137,6 +214,7 @@ async def login(request: Request, login_data: login_req):
 
     else:
         conn.close()
+        log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string,-1)
         raise HTTPException(status_code=401, detail="User does not exist")
 
 @app.post("/register")

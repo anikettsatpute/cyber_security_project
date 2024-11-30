@@ -15,5 +15,50 @@
         "entities": {},
         "query": "aaaa",
         "avg_key_delay": 12148.411764705883
+    },
+    {
+        "entities": {},
+        "query": "Can you track my order?",
+        "avg_key_delay": 349.64516129032256
+    },
+    {
+        "entities": {},
+        "query": "100",
+        "avg_key_delay": 383.8125
+    },
+    {
+        "entities": {},
+        "query": "the order id is 500",
+        "avg_key_delay": 400.280487804878
+    },
+    {
+        "entities": {},
+        "query": "can you cancel my order",
+        "avg_key_delay": 244.8695652173913
+    },
+    {
+        "entities": {},
+        "query": "id id 500",
+        "avg_key_delay": 475.6666666666667
+    },
+    {
+        "entities": {},
+        "query": "cancel my latest order",
+        "avg_key_delay": 512.9655172413793
+    },
+    {
+        "entities": {},
+        "query": "i found a better product",
+        "avg_key_delay": 472.578313253012
+    },
+    {
+        "entities": {},
+        "query": "Can i cancel my last order",
+        "avg_key_delay": 291.8636363636364
+    },
+    {
+        "entities": {},
+        "query": "i found a better product",
+        "avg_key_delay": 401.05479452054794
     }
 ]

@@ -9,7 +9,7 @@ import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import datetime, timezone, timedelta
-from models import ChatRequest, ChatResponse, login_req, register_req
+from models import ChatRequest, ChatResponse, login_req, register_req, UserInput
 from chatbot.chatbotInfra.chatbot import MultiTurnChatbot
 import os
 from transformers import BertTokenizerFast, BertForTokenClassification
@@ -55,6 +55,9 @@ def read_keystroke_data():
     # Check if the file exists
     if os.path.exists(KEYSTROKE_FILE_PATH):
         with open(KEYSTROKE_FILE_PATH, "r") as f:
+            data = json.load(f)
+            print("Data:", data)
+            return data
             return json.load(f)
     else:
         # If the file doesn't exist, return an empty list
@@ -193,7 +196,7 @@ async def get_login_anomalies(request: Request):
 
 
 @app.post("/keystroke")
-async def receive_keystroke_data(user_input: UserInput):
+async def receive_keystroke_data(request: Request,user_input: UserInput):
     """
     API endpoint to receive keystroke timing data and store it in a JSON file.
     """
@@ -202,6 +205,19 @@ async def receive_keystroke_data(user_input: UserInput):
         data = user_input.dict()
         print(data)
 
+        token = request.cookies.get("access_token")
+        print("token", token)
+        if not token:
+            print("No token")
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        payload = verify_token(token)
+
+        print("Payload:", payload)
+
+        user_id = payload['user_id']
+
+        print("User ID:", user_id)
+
         # Log the data for debugging
         print("Received keystroke data:", json.dumps(data, indent=4))
 
@@ -209,6 +225,7 @@ async def receive_keystroke_data(user_input: UserInput):
         keystroke_data = read_keystroke_data()
 
         # Append the new data to the keystroke data list
+        print("Hui hui")
         print(data['user_input']['avg_key_delay'])
         # only append data for avg_key_delay greater than 0
         if data['user_input']['avg_key_delay'] > 0:

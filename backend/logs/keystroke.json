@@ -1,0 +1,19 @@
+[
+    {
+        "user_input": {
+            "entities": {},
+            "query": "aaa",
+            "avg_key_delay": 12645.07142857143
+        }
+    },
+    {
+        "entities": {},
+        "query": "aaa",
+        "avg_key_delay": 14607.538461538461
+    },
+    {
+        "entities": {},
+        "query": "aaaa",
+        "avg_key_delay": 12148.411764705883
+    }
+]

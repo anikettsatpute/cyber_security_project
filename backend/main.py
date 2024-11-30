@@ -1,17 +1,17 @@
 import sqlite3
 import pandas as pd
+from fastapi import FastAPI, HTTPException, Depends, Response, Request
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi import FastAPI, HTTPException, Depends, Request
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-import datetime
+from datetime import datetime, timezone, timedelta
 from models import ChatRequest, ChatResponse, login_req, register_req
 from chatbot.chatbotInfra.chatbot import MultiTurnChatbot
 import os
-from pydantic import BaseModel
 from transformers import BertTokenizerFast, BertForTokenClassification
 from transformers import DistilBertForSequenceClassification
 from user_agents import parse
@@ -33,8 +33,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Trusted Host Middleware (Ensure requests only come from allowed hosts)
+app.add_middleware(
+    TrustedHostMiddleware,
+)
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-SECRET_KEY = "e7b3e7"
+SECRET_KEY = "381836fe163039ab7bcd0a84bf54dded9fbd4269"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPI = 30
 
@@ -91,14 +97,15 @@ scheduler.add_job(refresh_login_model, 'interval', minutes=10)
 scheduler.start()
 
 # JWT token
-def create_access_token(data: dict, expires_delta: datetime.timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+def create_access_token(user_id: str):
+    to_encode = {
+        'user_id': user_id,
+        'exp': datetime.now(timezone.utc) + timedelta(minutes=20)
+    }
+    # create token
+    print(to_encode)
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    print(encoded_jwt)
     return encoded_jwt
 
 def verify_token(token: str):
@@ -169,6 +176,7 @@ async def get_login_anomalies(request: Request):
 
 
 @app.post("/login")
+def login(request: login_req):
 async def login(request: Request, login_data: login_req):
     # Extract metadata
     ip_address = request.headers.get("X-Forwarded-For", request.client.host)
@@ -197,9 +205,23 @@ async def login(request: Request, login_data: login_req):
             log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string,-1)
             raise HTTPException(status_code=401, detail="Invalid credentials")
         else:
+            access_token = create_access_token(request.user_id)
             # access_token = create_access_token(data={"sub": login_data.user_id})
             access_token = "dummy_token"
             conn.close()
+
+            response = Response()
+
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=True,
+                samesite="None",    
+                max_age=ACCESS_TOKEN_EXPI * 60
+            )
+
+            return response
 
             # Return the login details with metadata
             log_login_to_json(login_data.user_id, ip_address, device_type, user_agent_string, +1)
@@ -235,13 +257,28 @@ def register(request: register_req):
             INSERT INTO users (user_id, password, name, email, address, phone_number)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (request.user_id, hashed_password, request.name, request.email, request.address, request.phone_number))
+
+        conn.commit()
+        conn.close()
+        access_token = create_access_token(request.user_id)
+
+        response = Response()
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="None",
+            max_age=ACCESS_TOKEN_EXPI * 60
+        )
+
+        return response
+
     except Exception as e:
         conn.close()
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    conn.commit()
-    conn.close()
-    return {"message": "Registration successful"}
 
 @app.post("/chat", response_model=ChatResponse)
 def chat_with_bot(request: ChatRequest):
@@ -268,3 +305,45 @@ def chat_with_bot(request: ChatRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/protected")
+async def protected(request: Request):
+    token = request.cookies.get("access_token")
+    print("token", token)
+    if not token:
+        print("No token")
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = verify_token(token)
+    return {"message": "This is a protected route", "user_id": payload['user_id']}
+
+@app.get("/admin")
+async def admin(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = verify_token(token)
+
+    # find userid in admin.csv
+    admin_df = pd.read_csv("admin.csv")
+    
+    for i in admin_df['user_id']:
+        if str(i) == str(payload['user_id']):
+            return {"message": "This is an admin route", "user_id": payload['user_id']}
+
+    raise HTTPException(status_code=403, detail="Not authorized")
+
+@app.post("/logout")
+def logout(response: Response):
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        secure=True, 
+        samesite="None",
+        max_age=0,
+        expires=datetime.now(timezone.utc) - timedelta(days=1)
+    )
+    return {"message": "Logged out successfully"}
+
+

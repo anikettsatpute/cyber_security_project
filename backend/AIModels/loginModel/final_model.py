@@ -11,7 +11,7 @@ def preprocess(df):
     window_size = '5min'
     # Filter out rows older than 10 days
     df['timestamp'] = df['timestamp'].dt.tz_convert('UTC')
-    df = df[df['timestamp'] > pd.Timestamp.now(tz='UTC') - pd.DateOffset(hours=10)]
+    df = df[df['timestamp'] > pd.Timestamp.now(tz='UTC') - pd.DateOffset(hours=48)]
 
     # Set timestamp as index for time-based operations
     df.set_index('timestamp', inplace=True)

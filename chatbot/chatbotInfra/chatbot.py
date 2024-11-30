@@ -9,10 +9,8 @@ import random
 ner_model_dir = '../ner_model'
 intent_model_dir = '../intent_model'
 
-# get any model from the model directory
 # search for dirs starting with name checkpoint
 # get the latest checkpoint
-
 latest_checkpoint_ner = max([os.path.join(ner_model_dir, d) for d in os.listdir(ner_model_dir) if os.path.isdir(os.path.join(ner_model_dir, d)) and d.startswith("checkpoint")])
 
 latest_checkpoint_intent = max([os.path.join(intent_model_dir, d) for d in os.listdir(intent_model_dir) if os.path.isdir(os.path.join(intent_model_dir, d)) and d.startswith("checkpoint")])

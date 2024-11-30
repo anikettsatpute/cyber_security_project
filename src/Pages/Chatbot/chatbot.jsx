@@ -7,10 +7,10 @@ import MessageParser from "./message_parser";
 import ActionProvider from "./action_provider";
 import Header from "../../Components/Header/header";
 import Footer from "../../Components/Footer/footer";
-export default function Chat_bot() {
+export default function Chat_bot({setIsLogged}) {
   return (
     <>
-      <Header />
+      <Header setIsLogged={setIsLogged}/>
       <Chatbot
         config={config}
         messageParser={MessageParser}

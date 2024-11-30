@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./register.module.css";
 import axios from "axios";
-
+import { useNavigate } from "react-router-dom";
 const API_BASE_URL = "http://127.0.0.1:8000"
 
 
@@ -25,7 +25,7 @@ const registerUser = async (username, password, name, email, address, phone) => 
   }
 }
 
-export default function Login() {
+export default function Register({setIsLogged}) {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
@@ -33,11 +33,14 @@ export default function Login() {
   const [address, setAddress] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [message, setMessage] = React.useState("");
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
       const response = await registerUser(username, password, name, email, address, phone);
+      setIsLogged(true);
+      navigate("/chatbot");
       setMessage(response.message);
     } catch (err) {
       setMessage(err);

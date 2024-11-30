@@ -72,10 +72,13 @@
 
 .react-chatbot-kit-user-chat-message {
     margin-right: 10px;
+    max-width: 50%;
     font-size: large;
 }
 
 .react-chatbot-kit-chat-bot-message {
     font-size: large;
+    width: auto;
+    max-width: 50%;
     margin-left: 10px;
 }

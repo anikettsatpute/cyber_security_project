@@ -58,3 +58,9 @@ backend/chatbot/ner_model/
 
 # do not ignore login.json
 !login.json
+!keystroke.json
+
+*.pyc
+*.png
+*.ico
+__pycache__/

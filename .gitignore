@@ -64,3 +64,5 @@ backend/chatbot/ner_model/
 *.png
 *.ico
 __pycache__/
+
+backend/chatbot/logs/
